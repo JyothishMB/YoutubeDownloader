@@ -9,8 +9,10 @@
 
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+from pytube import YouTube
 
 from appcore import Downloader
+
 
 
 class Ui_Form(object):
@@ -23,6 +25,11 @@ class Ui_Form(object):
         self.btnDownload = QtWidgets.QPushButton(Form)
         self.btnDownload.setGeometry(QtCore.QRect(140, 110, 89, 25))
         self.btnDownload.setObjectName("btnDownload")
+        self.dlProgress = QtWidgets.QProgressBar(Form)
+        self.dlProgress.setGeometry(QtCore.QRect(10, 90, 371, 16))
+        self.dlProgress.setProperty("value", 24)
+        self.dlProgress.setObjectName("dlProgress")
+        self.dlProgress.setValue(0)
 
         self.retranslateUi(Form)
         self.btnDownload.clicked.connect(self.btnDownload_click)
@@ -35,10 +42,29 @@ class Ui_Form(object):
 
     def btnDownload_click(self):
         if len(self.lineEdit.text())>0:
+            self.downloadlink = self.lineEdit.text()
+            self.youtubelink = YouTube(
+                                    self.downloadlink,
+                                    on_progress_callback=self.progress_function)
             print(self.lineEdit.text())
-            dl = Downloader.Downloader(self.lineEdit.text())
+            self.video = self.youtubelink.streams.first()
+            self.size = self.video.filesize
+            dl = Downloader.Downloader(self.youtubelink)
             dl.download()
             print('Done')
+
+    def progress_function(self, chunk,file_handle, bytes_remaining):
+        print(str(bytes_remaining) + ' - ' + str(self.size))
+        progress = (float((self.size-bytes_remaining)/self.size))*float(100)
+        self.dlProgress.setValue(progress)
+
+    def percent(self, tem, total):
+        perc = (float(tem) / float(total)) * float(100)
+        return perc
+
+    def complete_function(self):
+        print('Complete')
+            
 
 if __name__ == "__main__":
     import sys
